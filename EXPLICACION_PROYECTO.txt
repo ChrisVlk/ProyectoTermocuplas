@@ -1,0 +1,171 @@
+PROYECTO TERMOCUPLAS - EXPLICACION COMPLETA
+
+1) OBJETIVO DEL PROYECTO
+Este proyecto convierte valores de termocuplas usando tablas reales:
+- mV -> temperatura (C)
+- temperatura (C) -> mV
+
+Ademas incluye:
+- Estado termico (normal, advertencia, peligro)
+- Comparador entre tipos K, J y T
+- Offset de calibracion
+- Historial local de conversiones
+
+
+2) ARQUITECTURA GENERAL
+El sistema tiene 2 partes:
+
+A. Backend (Prolog)
+- Archivo: servidor.pl
+- Expone API HTTP en localhost:8080
+- Lee las tablas y calcula por interpolacion lineal
+
+B. Frontend (HTML/CSS/JS)
+- Archivos: index.html, style.css, script.js
+- Muestra formulario, resultado, termometro, comparador e historial
+- Llama al backend por fetch
+
+
+3) ARCHIVOS IMPORTANTES
+- servidor.pl: logica de negocio y endpoints
+- index.html: estructura visual de la pagina
+- style.css: diseno y responsive
+- script.js: interaccion en navegador
+- tabla_k.txt / tabla_j.txt / tabla_t.txt: datos de referencia (mV,temperatura)
+- extraer_datos.py: utilidad para generar tablas desde PDF
+- EJECUTAR.bat: arranque rapido
+
+
+4) COMO FUNCIONAN LAS TABLAS
+Cada fila tiene este formato:
+mv,temperatura
+
+Ejemplo:
+10.153,250
+
+El backend toma puntos vecinos y calcula el valor intermedio por interpolacion.
+
+
+5) ENDPOINTS DEL BACKEND
+
+5.1 /api/temperatura
+Entrada:
+- tipo: k | j | t
+- mv: numero
+
+Salida exitosa:
+- status: success
+- temperatura: numero
+- estado: normal|advertencia|peligro
+- mensaje_estado: texto
+
+5.2 /api/milivoltios
+Entrada:
+- tipo: k | j | t
+- temperatura: numero
+
+Salida exitosa:
+- status: success
+- milivoltios: numero
+- estado: normal|advertencia|peligro
+- mensaje_estado: texto
+
+5.3 /api/comparar
+Entrada:
+- modo: mv_a_temp | temp_a_mv
+- valor: numero
+
+Salida:
+- status: success
+- comparacion: lista con resultados para Tipo K, J y T
+
+
+6) LOGICA DE INTERPOLACION (IDEA)
+Si tienes dos puntos (x1,y1) y (x2,y2), y un valor x entre ellos:
+y = y1 + ((x - x1) / (x2 - x1)) * (y2 - y1)
+
+En este proyecto:
+- Para mV -> C: x es mV y y es temperatura
+- Para C -> mV: x es temperatura y y es mV
+
+
+7) ESTADO TERMICO
+El backend define limites por tipo:
+- Tipo K: -270 a 1372 C
+- Tipo J: -210 a 1200 C
+- Tipo T: -270 a 400 C
+
+Clasificacion:
+- peligro: fuera de rango
+- advertencia: cerca del borde operativo (10% del rango)
+- normal: zona central de operacion
+
+
+8) OFFSET DE CALIBRACION
+El offset es una correccion fija que se suma al resultado mostrado.
+
+Para que sirve:
+- Corregir error sistematico del sensor/instalacion
+
+Ejemplo:
+- Si siempre mides 2 C menos, usa offset +2
+
+Formula practica:
+offset = valor_real - valor_medido
+
+Nota:
+- El offset se aplica en frontend (no cambia la tabla original)
+
+
+9) COMPARADOR K/J/T
+Con el mismo valor de entrada, la app consulta los 3 tipos:
+- Muestra resultado por tipo
+- Muestra estado por tipo
+- Si un tipo no tiene rango para ese valor, lo reporta como error
+
+
+10) HISTORIAL
+El frontend guarda hasta 10 conversiones en memoria de sesion:
+- hora
+- tipo
+- modo
+- entrada
+- salida
+- estado
+
+
+11) FLUJO COMPLETO DE USO
+1. Usuario elige modo (mV->C o C->mV)
+2. Usuario elige tipo (K/J/T)
+3. Usuario ingresa valor y offset (opcional)
+4. Frontend llama API correspondiente
+5. Prolog valida, interpola y clasifica estado
+6. Frontend muestra resultado + termometro + estado
+7. Frontend actualiza comparador
+8. Frontend guarda en historial
+
+
+12) COMO EJECUTAR
+Opcion A (batch):
+1. Ejecutar EJECUTAR.bat
+
+Opcion B (manual):
+1. Abrir terminal en la carpeta del proyecto
+2. Ejecutar:
+	swipl -q -s servidor.pl -g "iniciar_servidor,thread_get_message(_)"
+3. Abrir en navegador:
+	http://localhost:8080/index.html
+
+
+13) POSIBLES MEJORAS FUTURAS
+- Exportar historial a CSV
+- Guardar historial persistente en archivo
+- Calibracion multipunto (no solo offset fijo)
+- Modo reporte PDF
+- Pruebas automaticas de endpoints
+
+
+14) RESUMEN CORTO
+Este proyecto combina Prolog + Web para resolver conversiones reales de termocuplas
+con interpolacion, validacion, diagnostico de estado y herramientas practicas de
+laboratorio (comparador, offset e historial).

@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Conversor de Termocuplas</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="fondo fondo-1" aria-hidden="true"></div>
+    <div class="fondo fondo-2" aria-hidden="true"></div>
+    <div class="fondo fondo-3" aria-hidden="true"></div>
+
+    <main class="contenedor" role="main">
+        <header class="encabezado">
+            <span class="chip">Universidad Tecnologica La Salle ULSA</span>
+            <h1>Conversor de Termocuplas</h1>
+            <p>Convierte entre milivoltios (mV) y temperatura (°C) con interpolacion en tablas reales.</p>
+        </header>
+
+        <div class="paneles">
+            <section class="formulario" aria-label="Formulario de conversion">
+                <div class="campo">
+                    <label for="modo">Modo de conversion</label>
+                    <select id="modo" onchange="actualizarModo()">
+                        <option value="mv_a_temp">mV a °C</option>
+                        <option value="temp_a_mv">°C a mV</option>
+                    </select>
+                </div>
+
+                <div class="campo">
+                    <label for="tipo">Tipo de termocupla</label>
+                    <select id="tipo">
+                        <option value="k">Tipo K</option>
+                        <option value="j">Tipo J</option>
+                        <option value="t">Tipo T</option>
+                    </select>
+                </div>
+
+                <div class="campo">
+                    <label id="entrada-label" for="entrada">Milivoltios (mV)</label>
+                    <input type="number" id="entrada" step="0.001" placeholder="Ej: 0.039">
+                </div>
+
+                <div class="campo">
+                    <label id="offset-label" for="offset">Offset de calibracion (°C)</label>
+                    <input type="number" id="offset" step="0.1" value="0" placeholder="Ej: 1.5">
+                </div>
+
+                <button type="button" onclick="ejecutarConversion()">Convertir ahora</button>
+            </section>
+
+            <section id="resultado" class="resultado" aria-live="polite">
+                <div class="resultado-header">
+                    <h2>Resultado</h2>
+                    <p class="subresultado">Lectura estimada segun la tabla seleccionada</p>
+                </div>
+
+                <div class="lectura">
+                    <span id="temp-valor">--</span>
+                    <span id="resultado-unidad" class="unidad">°C</span>
+                </div>
+                <p id="error-msg" class="error"></p>
+
+                <div class="estado-box">
+                    <span id="estado-badge" class="estado-badge estado-neutral">Sin evaluar</span>
+                    <p id="estado-texto" class="estado-texto">Realiza una conversion para ver el estado termico.</p>
+                    <p id="ajuste-info" class="ajuste-info"></p>
+                </div>
+
+                <div id="termometro-container" class="termometro-container">
+                    <div class="tubo">
+                        <div id="liquido" class="liquido"></div>
+                    </div>
+                    <div id="bulbo" class="bulbo"></div>
+                </div>
+            </section>
+        </div>
+
+        <section class="extras" aria-label="Panel de comparacion e historial">
+            <div class="comparador">
+                <h3>Comparador de termocuplas</h3>
+                <p class="extras-sub">Misma entrada, comparada en Tipo K, J y T.</p>
+                <div class="tabla-wrap">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Tipo</th>
+                                <th>Resultado</th>
+                                <th>Estado</th>
+                            </tr>
+                        </thead>
+                        <tbody id="comparacion-body">
+                            <tr>
+                                <td colspan="3">Aun sin datos para comparar.</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div class="historial">
+                <h3>Historial reciente</h3>
+                <p class="extras-sub">Ultimas 10 conversiones en esta sesion.</p>
+                <ul id="historial-lista" class="historial-lista">
+                    <li>Sin conversiones registradas.</li>
+                </ul>
+            </div>
+        </section>
+    </main>
+
+    <script src="script.js"></script>
+</body>
+</html>
