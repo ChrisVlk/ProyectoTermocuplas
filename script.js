@@ -177,7 +177,9 @@ async function ejecutarConversion() {
     const ajusteInfo = document.getElementById('ajuste-info');
 
     if (entrada === '' || Number.isNaN(Number(entrada))) {
-        alert('Por favor, ingresa un valor numerico valido.');
+        const inputEl = document.getElementById('entrada');
+        errorMsg.innerText = 'Por favor, ingresa un valor numérico válido.';
+        inputEl.focus();
         return;
     }
 
