@@ -8,7 +8,7 @@
 iniciar_app :-
     % Crear ventana y ajustar tamaño
     new(D, dialog('Conversor de Termocuplas - Academico')),
-    send(D, size, size(430, 380)),
+    send(D, size, size(540, 520)),
     
     % Menús desplegables
     send(D, append, new(TipoMenu, menu(tipo, cycle))),
@@ -21,20 +21,26 @@ iniciar_app :-
     send(ModoMenu, append, 'Grados a mV'),
     
     % Caja de entrada
-    send(D, append, new(text_item(valor))),
+    send(D, append, new(ValItem, text_item(valor))),
+    send(ValItem, length, 14),
     send(D, append, new(OffsetItem, text_item(offset, '0'))),
     send(OffsetItem, label, 'Offset salida'),
+    send(OffsetItem, length, 8),
     
     % Resultado en grande
     send(D, append, new(ResLabel, label(resultado, 'Resultado: --'))),
-    send(ResLabel, font, font(helvetica, bold, 14)),
+    send(ResLabel, font, font(helvetica, bold, 18)),
+
+    % Etiqueta de estado inline (reemplaza dialogs inform)
+    send(D, append, new(StatusLabel, label(status, ''))),
+    send(StatusLabel, font, font(helvetica, normal, 10)),
     
     % Sección de Historial
     send(D, append, label(titulo_historial, 'Historial de Conversiones:')),
     send(D, append, new(Historial, list_browser)),
     send(Historial, name, historial_lista),
-    send(Historial, width, 45),
-    send(Historial, height, 8), % Muestra hasta 8 líneas a la vez
+    send(Historial, width, 60),
+    send(Historial, height, 10), % Muestra hasta 10 líneas a la vez
     
     % Botones
     send(D, append, button(calcular, message(@prolog, calcular, D))),
@@ -62,19 +68,21 @@ calcular(D) :-
                 (   Modo == 'mV a Grados' ->
                     (   buscar_mv_c(Archivo, ValNum, ResBase) ->
                         Res is round((ResBase + Offset) * 100) / 100,
-                        atomic_list_concat(['Resultado: ', Res, ' °C'], LblTxt),
-                        atomic_list_concat(['[Tipo ', Tipo, '] ', ValNum, ' mV  =  ', Res, ' °C (offset ', Offset, ')'], HistTxt)
+                        atomic_list_concat(['Resultado: ', Res, ' C'], LblTxt),
+                        atomic_list_concat(['[Tipo ', Tipo, '] ', ValNum, ' mV  =  ', Res, ' C (offset ', Offset, ')'], HistTxt),
+                        EstadoMsg = 'Conversion correcta.:)'
                     ;
-                        LblTxt = 'Error: Fuera de rango', HistTxt = 'Error: Valor fuera de limites'
+                        LblTxt = 'Error: Fuera de rango', HistTxt = 'Error: Valor fuera de limites', EstadoMsg = 'Error: fuera de rango'
                     )
                 ;
                     % Modo: Grados a mV
                     (   buscar_c_mv(Archivo, ValNum, ResBase) ->
                         Res is round((ResBase + Offset) * 1000) / 1000,
                         atomic_list_concat(['Resultado: ', Res, ' mV'], LblTxt),
-                        atomic_list_concat(['[Tipo ', Tipo, '] ', ValNum, ' °C  =  ', Res, ' mV (offset ', Offset, ')'], HistTxt)
+                        atomic_list_concat(['[Tipo ', Tipo, '] ', ValNum, ' C  =  ', Res, ' mV (offset ', Offset, ')'], HistTxt),
+                        EstadoMsg = 'Conversion correcta.'
                     ;
-                        LblTxt = 'Error: Fuera de rango', HistTxt = 'Error: Valor fuera de limites'
+                        LblTxt = 'Error: Fuera de rango', HistTxt = 'Error: Valor fuera de limites', EstadoMsg = 'Error: fuera de rango'
                     )
                 ),
 
@@ -82,17 +90,24 @@ calcular(D) :-
                 get(D, member, resultado, ResLabel),
                 send(ResLabel, selection, LblTxt),
 
+                % 1b. Actualizar estado inline
+                get(D, member, status, StatusLabel),
+                send(StatusLabel, selection, EstadoMsg),
+
                 % 2. Agregar al Historial
                 get(D, member, historial_lista, ListaHistorial),
                 send(ListaHistorial, append, dict_item(HistTxt))
             ;
-                send(@display, inform, 'No se encontro la tabla para el tipo seleccionado.')
+                get(D, member, status, StatusLabel),
+                send(StatusLabel, selection, 'No se encontro la tabla para el tipo seleccionado.')
             )
         ;
-            send(@display, inform, 'Por favor, ingresa un offset valido.')
+            get(D, member, status, StatusLabel),
+            send(StatusLabel, selection, 'Por favor, ingresa un offset valido.')
         )
     ;
-        send(@display, inform, 'Por favor, ingresa un numero valido.')
+        get(D, member, status, StatusLabel),
+        send(StatusLabel, selection, 'Por favor, ingresa un numero valido.')
     ).
 
 % Parseo defensivo para evitar excepciones con entradas invalidas.
@@ -134,6 +149,8 @@ limpiar(D) :-
     get(D, member, offset, OffsetItem), send(OffsetItem, selection, '0'),
     % Reiniciar resultado
     get(D, member, resultado, ResLabel), send(ResLabel, selection, 'Resultado: --'),
+    % Limpiar estado
+    get(D, member, status, StatusLabel), send(StatusLabel, selection, ''),
     % Vaciar historial
     get(D, member, historial_lista, ListaHistorial), send(ListaHistorial, clear).
 
