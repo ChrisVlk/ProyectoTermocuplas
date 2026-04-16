@@ -160,7 +160,11 @@ limpiar(D) :-
 
 % --- De Milivoltios a Grados ---
 buscar_mv_c(Archivo, V, ResFinal) :-
-    csv_read_file(Archivo, Filas, [separator(0',), convert(true)]),
+    csv_read_file(Archivo, Filas0, [separator(0',), convert(true)]),
+    % Ordenar filas por milivoltios para evitar saltos en la tabla que
+    % producen interpolaciones incorrectas cuando el archivo no está
+    % estrictamente ordenado.
+    predsort(compare_mv, Filas0, Filas),
     interpolar_mv(Filas, V, ResCalc),
     ResFinal is round(ResCalc * 100) / 100.
 
@@ -172,7 +176,10 @@ interpolar_mv([_ | Resto], V, T) :-
 
 % --- De Grados a Milivoltios ---
 buscar_c_mv(Archivo, T_in, ResFinal) :-
-    csv_read_file(Archivo, Filas, [separator(0',), convert(true)]),
+    csv_read_file(Archivo, Filas0, [separator(0',), convert(true)]),
+    % Ordenar filas por temperatura para interpolar correctamente cuando
+    % las entradas no están en orden ascendente/descendente.
+    predsort(compare_t, Filas0, Filas),
     interpolar_c(Filas, T_in, ResCalc),
     ResFinal is round(ResCalc * 1000) / 1000. % mV ocupa 3 decimales
 
@@ -181,3 +188,10 @@ interpolar_c([row(MV1, T1), row(MV2, T2) | _], T_in, MV_out) :-
     MV_out is MV1 + ((T_in - T1) / (T2 - T1)) * (MV2 - MV1).
 interpolar_c([_ | Resto], T_in, MV_out) :- 
     interpolar_c(Resto, T_in, MV_out).
+
+% --- Comparadores para ordenar las filas leidas desde CSV ---
+compare_mv(Order, row(MV1,_), row(MV2,_)) :-
+    compare(Order, MV1, MV2).
+
+compare_t(Order, row(_,T1), row(_,T2)) :-
+    compare(Order, T1, T2).
