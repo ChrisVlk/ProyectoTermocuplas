@@ -6,34 +6,42 @@
 % ==========================================
 
 iniciar_app :-
-    % Crear ventana y ajustar tamaño
+    % Crear ventana, ajustar tamaño y centrarla
     new(D, dialog('Conversor de Termocuplas - Academico')),
     send(D, size, size(540, 520)),
+    send(D, center),
     
     % Menús desplegables
     send(D, append, new(TipoMenu, menu(tipo, cycle))),
     send(TipoMenu, append, k),
     send(TipoMenu, append, j),
     send(TipoMenu, append, t),
+    send(TipoMenu, selection, k), % valor por defecto
     
     send(D, append, new(ModoMenu, menu(modo, cycle))),
     send(ModoMenu, append, 'mV a Grados'),
     send(ModoMenu, append, 'Grados a mV'),
+    send(ModoMenu, selection, 'mV a Grados'), % modo por defecto
     
     % Caja de entrada
     send(D, append, new(ValItem, text_item(valor))),
     send(ValItem, length, 14),
+    send(ValItem, selection, '0'),
+    send(ValItem, help_text, 'Ingresa el valor (use "," o "." como separador)'),
     send(D, append, new(OffsetItem, text_item(offset, '0'))),
     send(OffsetItem, label, 'Offset salida'),
     send(OffsetItem, length, 8),
+    send(OffsetItem, help_text, 'Offset que se suma al resultado (num.)'),
     
     % Resultado en grande
     send(D, append, new(ResLabel, label(resultado, 'Resultado: --'))),
     send(ResLabel, font, font(helvetica, bold, 18)),
+    send(ResLabel, colour, colour(black)),
 
     % Etiqueta de estado inline (reemplaza dialogs inform)
     send(D, append, new(StatusLabel, label(status, ''))),
     send(StatusLabel, font, font(helvetica, normal, 10)),
+    send(StatusLabel, colour, colour(gray)),
     
     % Sección de Historial
     send(D, append, label(titulo_historial, 'Historial de Conversiones:')),
@@ -41,11 +49,12 @@ iniciar_app :-
     send(Historial, name, historial_lista),
     send(Historial, width, 60),
     send(Historial, height, 10), % Muestra hasta 10 líneas a la vez
+    send(Historial, font, font(helvetica, normal, 10)),
     
     % Botones
-    send(D, append, button(calcular, message(@prolog, calcular, D))),
-    send(D, append, button(limpiar, message(@prolog, limpiar, D))),
-    send(D, append, button(salir, message(D, destroy))),
+    send(D, append, new(CalcBtn, button('Calcular', message(@prolog, calcular, D)))),
+    send(D, append, new(ClearBtn, button('Limpiar', message(@prolog, limpiar, D)))),
+    send(D, append, new(ExitBtn, button('Salir', message(D, destroy)))),
     
     % Mostrar ventana
     send(D, open).
@@ -85,7 +94,6 @@ calcular(D) :-
                         LblTxt = 'Error: Fuera de rango', HistTxt = 'Error: Valor fuera de limites', EstadoMsg = 'Error: fuera de rango'
                     )
                 ),
-
                 % 1. Actualizar el Label del resultado
                 get(D, member, resultado, ResLabel),
                 send(ResLabel, selection, LblTxt),
@@ -94,20 +102,31 @@ calcular(D) :-
                 get(D, member, status, StatusLabel),
                 send(StatusLabel, selection, EstadoMsg),
 
+                % Ajustar colores según exito/error
+                (   sub_atom(EstadoMsg, 0, 5, _, 'Error')
+                ->  send(StatusLabel, colour, colour(red)),
+                    send(ResLabel, colour, colour(darkgray))
+                ;   send(StatusLabel, colour, colour(green)),
+                    send(ResLabel, colour, colour(black))
+                ),
+
                 % 2. Agregar al Historial
                 get(D, member, historial_lista, ListaHistorial),
                 send(ListaHistorial, append, dict_item(HistTxt))
             ;
                 get(D, member, status, StatusLabel),
-                send(StatusLabel, selection, 'No se encontro la tabla para el tipo seleccionado.')
+                send(StatusLabel, selection, 'No se encontro la tabla para el tipo seleccionado.'),
+                send(StatusLabel, colour, colour(red))
             )
         ;
             get(D, member, status, StatusLabel),
-            send(StatusLabel, selection, 'Por favor, ingresa un offset valido.')
+            send(StatusLabel, selection, 'Por favor, ingresa un offset valido.'),
+            send(StatusLabel, colour, colour(red))
         )
     ;
         get(D, member, status, StatusLabel),
-        send(StatusLabel, selection, 'Por favor, ingresa un numero valido.')
+        send(StatusLabel, selection, 'Por favor, ingresa un numero valido.'),
+        send(StatusLabel, colour, colour(red))
     ).
 
 % Parseo defensivo para evitar excepciones con entradas invalidas.
