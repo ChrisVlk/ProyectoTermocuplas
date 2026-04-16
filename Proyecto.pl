@@ -7,57 +7,65 @@
 
 iniciar_app :-
     % Crear ventana, ajustar tamaño y centrarla
-    new(D, dialog('Conversor de Termocuplas - Academico')),
-    send(D, size, size(540, 520)),
-    send(D, center),
+    new(D, dialog('Conversor de Termocuplas')),
+    send(D, size, size(560, 680)),
     
-    % Menús desplegables
-    send(D, append, new(TipoMenu, menu(tipo, cycle))),
+    % Titulo principal
+    send(D, append, new(Tit, label(titulo_principal, 'Calculadora de Termocuplas'))),
+    send(Tit, font, font(helvetica, bold, 18)),
+    
+    % Grupo 1: Configuración
+    send(D, append, new(GrpConfig, dialog_group('1. Configuracion del Sensor', box))),
+    send(GrpConfig, append, new(TipoMenu, menu(tipo, cycle))),
     send(TipoMenu, append, k),
     send(TipoMenu, append, j),
     send(TipoMenu, append, t),
     send(TipoMenu, selection, k), % valor por defecto
     
-    send(D, append, new(ModoMenu, menu(modo, cycle))),
+    send(GrpConfig, append, new(ModoMenu, menu(modo, cycle)), right),
     send(ModoMenu, append, 'mV a Grados'),
     send(ModoMenu, append, 'Grados a mV'),
     send(ModoMenu, selection, 'mV a Grados'), % modo por defecto
     
-    % Caja de entrada
-    send(D, append, new(ValItem, text_item(valor))),
+    % Grupo 2: Entrada
+    send(D, append, new(GrpDatos, dialog_group('2. Entrada de Datos', box))),
+    
+    send(GrpDatos, append, new(ValItem, text_item(valor))),
     send(ValItem, length, 14),
     send(ValItem, selection, '0'),
-    send(ValItem, help_text, 'Ingresa el valor (use "," o "." como separador)'),
-    send(D, append, new(OffsetItem, text_item(offset, '0'))),
-    send(OffsetItem, label, 'Offset salida'),
-    send(OffsetItem, length, 8),
-    send(OffsetItem, help_text, 'Offset que se suma al resultado (num.)'),
     
-    % Resultado en grande
-    send(D, append, new(ResLabel, label(resultado, 'Resultado: --'))),
-    send(ResLabel, font, font(helvetica, bold, 18)),
-    send(ResLabel, colour, colour(black)),
+    send(GrpDatos, append, new(OffsetItem, text_item(offset, '0')), right),
+    send(OffsetItem, label, 'Offset '),
+    send(OffsetItem, length, 8),
+    
+    % Grupo 3: Resultado (Destacado)
+    send(D, append, new(GrpRes, dialog_group('Resultado y Estado', box))),
+    send(GrpRes, append, new(ResLabel, label(resultado, 'Resultado: --'))),
+    send(ResLabel, font, font(helvetica, bold, 24)),
+    send(ResLabel, colour, colour(blue)),
 
-    % Etiqueta de estado inline (reemplaza dialogs inform)
-    send(D, append, new(StatusLabel, label(status, ''))),
-    send(StatusLabel, font, font(helvetica, normal, 10)),
+    send(GrpRes, append, new(StatusLabel, label(status, ''))),
+    send(StatusLabel, font, font(helvetica, italic, 11)),
     send(StatusLabel, colour, colour(gray)),
     
+    % Botones principales
+    send(D, append, new(CalcBtn, button('  CALCULAR  ', message(@prolog, calcular, D)))),
+    send(CalcBtn, font, font(helvetica, bold, 14)),
+    send(D, append, new(_ClearBtn, button('Limpiar', message(@prolog, limpiar, D))), right),
+
     % Sección de Historial
-    send(D, append, label(titulo_historial, 'Historial de Conversiones:')),
-    send(D, append, new(Historial, list_browser)),
+    send(D, append, new(GrpHist, dialog_group('Historial de Conversiones', box))),
+    send(GrpHist, append, new(Historial, list_browser)),
     send(Historial, name, historial_lista),
-    send(Historial, width, 60),
-    send(Historial, height, 10), % Muestra hasta 10 líneas a la vez
+    send(Historial, width, 65),
+    send(Historial, height, 8), % Muestra hasta 8 líneas a la vez
     send(Historial, font, font(helvetica, normal, 10)),
     
-    % Botones
-    send(D, append, new(CalcBtn, button('Calcular', message(@prolog, calcular, D)))),
-    send(D, append, new(ClearBtn, button('Limpiar', message(@prolog, limpiar, D)))),
-    send(D, append, new(ExitBtn, button('Salir', message(D, destroy)))),
+    % Boton Salir
+    send(D, append, new(_ExitBtn, button('Salir', message(D, destroy)))),
     
     % Mostrar ventana
-    send(D, open).
+    send(D, open_centered).
 
 % ==========================================
 % 2. LÓGICA DE LA INTERFAZ
@@ -65,10 +73,13 @@ iniciar_app :-
 
 calcular(D) :-
     % Obtener datos de la ventana
-    get(D, member, tipo, TipoMenu), get(TipoMenu, selection, Tipo),
-    get(D, member, modo, ModoMenu), get(ModoMenu, selection, Modo),
-    get(D, member, valor, ValItem), get(ValItem, selection, ValText),
-    get(D, member, offset, OffsetItem), get(OffsetItem, selection, OffsetText),
+    get(D, member, '1. Configuracion del Sensor', GrpConfig),
+    get(GrpConfig, member, tipo, TipoMenu), get(TipoMenu, selection, Tipo),
+    get(GrpConfig, member, modo, ModoMenu), get(ModoMenu, selection, Modo),
+    
+    get(D, member, '2. Entrada de Datos', GrpDatos),
+    get(GrpDatos, member, valor, ValItem), get(ValItem, selection, ValText),
+    get(GrpDatos, member, offset, OffsetItem), get(OffsetItem, selection, OffsetText),
     
     (   parsear_numero(ValText, ValNum) ->
         (   parsear_numero(OffsetText, Offset) ->
@@ -95,11 +106,12 @@ calcular(D) :-
                     )
                 ),
                 % 1. Actualizar el Label del resultado
-                get(D, member, resultado, ResLabel),
+                get(D, member, 'Resultado y Estado', GrpRes),
+                get(GrpRes, member, resultado, ResLabel),
                 send(ResLabel, selection, LblTxt),
 
                 % 1b. Actualizar estado inline
-                get(D, member, status, StatusLabel),
+                get(GrpRes, member, status, StatusLabel),
                 send(StatusLabel, selection, EstadoMsg),
 
                 % Ajustar colores según exito/error
@@ -107,24 +119,28 @@ calcular(D) :-
                 ->  send(StatusLabel, colour, colour(red)),
                     send(ResLabel, colour, colour(darkgray))
                 ;   send(StatusLabel, colour, colour(green)),
-                    send(ResLabel, colour, colour(black))
+                    send(ResLabel, colour, colour(blue))
                 ),
 
                 % 2. Agregar al Historial
-                get(D, member, historial_lista, ListaHistorial),
+                get(D, member, 'Historial de Conversiones', GrpHist),
+                get(GrpHist, member, historial_lista, ListaHistorial),
                 send(ListaHistorial, append, dict_item(HistTxt))
             ;
-                get(D, member, status, StatusLabel),
+                get(D, member, 'Resultado y Estado', GrpRes),
+                get(GrpRes, member, status, StatusLabel),
                 send(StatusLabel, selection, 'No se encontro la tabla para el tipo seleccionado.'),
                 send(StatusLabel, colour, colour(red))
             )
         ;
-            get(D, member, status, StatusLabel),
+            get(D, member, 'Resultado y Estado', GrpRes),
+            get(GrpRes, member, status, StatusLabel),
             send(StatusLabel, selection, 'Por favor, ingresa un offset valido.'),
             send(StatusLabel, colour, colour(red))
         )
     ;
-        get(D, member, status, StatusLabel),
+        get(D, member, 'Resultado y Estado', GrpRes),
+        get(GrpRes, member, status, StatusLabel),
         send(StatusLabel, selection, 'Por favor, ingresa un numero valido.'),
         send(StatusLabel, colour, colour(red))
     ).
@@ -155,23 +171,39 @@ reemplazar_coma_por_punto(',', '.') :- !.
 reemplazar_coma_por_punto(Char, Char).
 
 % Construye una ruta estable a los archivos de tabla (relativa al .pl).
+% Construye una ruta estable a los archivos de tabla (soporta tanto .pl como .exe compilado).
 archivo_tabla(Tipo, Archivo) :-
     atomic_list_concat(['tabla_', Tipo, '.txt'], Nombre),
-    source_file(archivo_tabla(_, _), ArchivoFuente),
-    file_directory_name(ArchivoFuente, Dir),
-    directory_file_path(Dir, Nombre, Archivo),
-    exists_file(Archivo).
+    (   % 1. Si estamos ejecutando un .exe compilado
+        current_prolog_flag(os_argv, [ExePath|_]),
+        file_directory_name(ExePath, DirExe),
+        directory_file_path(DirExe, Nombre, PathExe),
+        exists_file(PathExe)
+    ->  Archivo = PathExe
+    ;   % 2. Si estamos desde el codigo fuente .pl
+        source_file(archivo_tabla(_, _), ArchivoFuente),
+        file_directory_name(ArchivoFuente, DirPl),
+        directory_file_path(DirPl, Nombre, PathPl),
+        exists_file(PathPl)
+    ->  Archivo = PathPl
+    ;   % 3. Fallback: buscar en la carpeta actual
+        exists_file(Nombre)
+    ->  Archivo = Nombre
+    ).
 
 limpiar(D) :-
     % Borrar input
-    get(D, member, valor, ValItem), send(ValItem, selection, ''),
-    get(D, member, offset, OffsetItem), send(OffsetItem, selection, '0'),
+    get(D, member, '2. Entrada de Datos', GrpDatos),
+    get(GrpDatos, member, valor, ValItem), send(ValItem, selection, ''),
+    get(GrpDatos, member, offset, OffsetItem), send(OffsetItem, selection, '0'),
     % Reiniciar resultado
-    get(D, member, resultado, ResLabel), send(ResLabel, selection, 'Resultado: --'),
+    get(D, member, 'Resultado y Estado', GrpRes),
+    get(GrpRes, member, resultado, ResLabel), send(ResLabel, selection, 'Resultado: --'),
     % Limpiar estado
-    get(D, member, status, StatusLabel), send(StatusLabel, selection, ''),
+    get(GrpRes, member, status, StatusLabel), send(StatusLabel, selection, ''),
     % Vaciar historial
-    get(D, member, historial_lista, ListaHistorial), send(ListaHistorial, clear).
+    get(D, member, 'Historial de Conversiones', GrpHist),
+    get(GrpHist, member, historial_lista, ListaHistorial), send(ListaHistorial, clear).
 
 % ==========================================
 % 3. LÓGICA MATEMÁTICA (INTERPOLACIÓN DUAL)
