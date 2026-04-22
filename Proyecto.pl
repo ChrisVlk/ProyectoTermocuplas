@@ -2,131 +2,137 @@
 :- use_module(library(csv)).
 
 iniciar_app :-
-    new(D, dialog('Conversor de Termocuplas')),
-    send(D, size, size(560, 680)),
-    send(D, append, new(Tit, label(titulo_principal, 'Calculadora de Termocuplas'))),
-    send(Tit, font, font(helvetica, bold, 18)),
-    send(D, append, new(GrpConfig, dialog_group('1. Configuracion del Sensor', box))),
-    send(GrpConfig, append, new(TipoMenu, menu(tipo, cycle))),
-    send(TipoMenu, append, k),
-    send(TipoMenu, append, j),
-    send(TipoMenu, append, t),
-    send(TipoMenu, selection, k),
-    send(GrpConfig, append, new(ModoMenu, menu(modo, cycle)), right),
-    send(ModoMenu, append, 'mV a Grados'),
-    send(ModoMenu, append, 'Grados a mV'),
-    send(ModoMenu, selection, 'mV a Grados'),
-    send(D, append, new(GrpDatos, dialog_group('2. Entrada de Datos', box))),
-    send(GrpDatos, append, new(ValItem, text_item(valor))),
-    send(ValItem, length, 14),
-    send(ValItem, selection, '0'),
-    send(GrpDatos, append, new(OffsetItem, text_item(offset, '0')), right),
-    send(OffsetItem, label, 'Offset '),
-    send(OffsetItem, length, 8),
-    send(D, append, new(GrpRes, dialog_group('Resultado y Estado', box))),
-    send(GrpRes, append, new(ResLabel, label(resultado, 'Resultado: --'))),
-    send(ResLabel, font, font(helvetica, bold, 24)),
-    send(ResLabel, colour, colour(blue)),
-    send(GrpRes, append, new(StatusLabel, label(status, ''))),
-    send(StatusLabel, font, font(helvetica, italic, 11)),
-    send(StatusLabel, colour, colour(gray)),
-    send(D, append, new(CalcBtn, button('  CALCULAR  ', message(@prolog, calcular, D)))),
-    send(CalcBtn, font, font(helvetica, bold, 14)),
-    send(D, append, new(_ClearBtn, button('Limpiar', message(@prolog, limpiar, D))), right),
-    send(D, append, new(GrpHist, dialog_group('Historial de Conversiones', box))),
-    send(GrpHist, append, new(Historial, list_browser)),
-    send(Historial, name, historial_lista),
-    send(Historial, width, 65),
-    send(Historial, height, 8),
-    send(Historial, font, font(helvetica, normal, 10)),
-    send(D, append, new(_ExitBtn, button('Salir', message(D, return, ok)))),
-    get(D, confirm_centered, _),
-    free(D).
+    new(Ventana, dialog('Conversor de Termocuplas')),
+    send(Ventana, size, size(560, 680)),
+    send(Ventana, append, new(Titulo, label(titulo_principal, 'Calculadora de Termocuplas'))),
+    send(Titulo, font, font(helvetica, bold, 18)),
+    
+    send(Ventana, append, new(GrupoConfig, dialog_group('1. Configuracion del Sensor', box))),
+    send(GrupoConfig, append, new(MenuTipo, menu(tipo, cycle))),
+    send(MenuTipo, append, k),
+    send(MenuTipo, append, j),
+    send(MenuTipo, append, t),
+    send(MenuTipo, selection, k),
+    send(GrupoConfig, append, new(MenuModo, menu(modo, cycle)), right),
+    send(MenuModo, append, 'mV a Grados'),
+    send(MenuModo, append, 'Grados a mV'),
+    send(MenuModo, selection, 'mV a Grados'),
+    
+    send(Ventana, append, new(GrupoDatos, dialog_group('2. Entrada de Datos', box))),
+    send(GrupoDatos, append, new(InputValor, text_item(valor))),
+    send(InputValor, length, 14),
+    send(InputValor, selection, '0'),
+    send(GrupoDatos, append, new(InputOffset, text_item(offset, '0')), right),
+    send(InputOffset, label, 'Offset '),
+    send(InputOffset, length, 8),
+    
+    send(Ventana, append, new(GrupoResultado, dialog_group('Resultado y Estado', box))),
+    send(GrupoResultado, append, new(EtiquetaResultado, label(resultado, 'Resultado: --'))),
+    send(EtiquetaResultado, font, font(helvetica, bold, 24)),
+    send(EtiquetaResultado, colour, colour(blue)),
+    send(GrupoResultado, append, new(EtiquetaEstado, label(status, ''))),
+    send(EtiquetaEstado, font, font(helvetica, italic, 11)),
+    send(EtiquetaEstado, colour, colour(gray)),
+    
+    send(Ventana, append, new(BotonCalcular, button('  CALCULAR  ', message(@prolog, calcular, Ventana)))),
+    send(BotonCalcular, font, font(helvetica, bold, 14)),
+    send(Ventana, append, new(_BotonLimpiar, button('Limpiar', message(@prolog, limpiar, Ventana))), right),
+    
+    send(Ventana, append, new(GrupoHistorial, dialog_group('Historial de Conversiones', box))),
+    send(GrupoHistorial, append, new(CajaHistorial, list_browser)),
+    send(CajaHistorial, name, historial_lista),
+    send(CajaHistorial, width, 65),
+    send(CajaHistorial, height, 8),
+    send(CajaHistorial, font, font(helvetica, normal, 10)),
+    
+    send(Ventana, append, new(_BotonSalir, button('Salir', message(Ventana, return, ok)))),
+    get(Ventana, confirm_centered, _),
+    free(Ventana).
 
-calcular(D) :-
-    get(D, member, '1. Configuracion del Sensor', GrpConfig),
-    get(GrpConfig, member, tipo, TipoMenu), get(TipoMenu, selection, Tipo),
-    get(GrpConfig, member, modo, ModoMenu), get(ModoMenu, selection, Modo),
-    get(D, member, '2. Entrada de Datos', GrpDatos),
-    get(GrpDatos, member, valor, ValItem), get(ValItem, selection, ValText),
-    get(GrpDatos, member, offset, OffsetItem), get(OffsetItem, selection, OffsetText),
-    validar_y_calcular(D, Tipo, Modo, ValText, OffsetText).
+calcular(Ventana) :-
+    get(Ventana, member, '1. Configuracion del Sensor', GrupoConfig),
+    get(GrupoConfig, member, tipo, MenuTipo), get(MenuTipo, selection, Tipo),
+    get(GrupoConfig, member, modo, MenuModo), get(MenuModo, selection, Modo),
+    get(Ventana, member, '2. Entrada de Datos', GrupoDatos),
+    get(GrupoDatos, member, valor, InputValor), get(InputValor, selection, ValorTexto),
+    get(GrupoDatos, member, offset, InputOffset), get(InputOffset, selection, OffsetTexto),
+    validar_y_calcular(Ventana, Tipo, Modo, ValorTexto, OffsetTexto).
 
-validar_y_calcular(D, Tipo, Modo, ValText, OffsetText) :-
-    parsear_numero(ValText, ValNum), !,
-    validar_offset(D, Tipo, Modo, ValNum, OffsetText).
-validar_y_calcular(D, _, _, _, _) :-
-    mostrar_error(D, 'Por favor, ingresa un numero valido.').
+validar_y_calcular(Ventana, Tipo, Modo, ValorTexto, OffsetTexto) :-
+    parsear_numero(ValorTexto, ValorNumerico), !,
+    validar_offset(Ventana, Tipo, Modo, ValorNumerico, OffsetTexto).
+validar_y_calcular(Ventana, _, _, _, _) :-
+    mostrar_error(Ventana, 'Por favor, ingresa un numero valido.').
 
-validar_offset(D, Tipo, Modo, ValNum, OffsetText) :-
-    parsear_numero(OffsetText, Offset), !,
-    validar_archivo(D, Tipo, Modo, ValNum, Offset).
-validar_offset(D, _, _, _, _) :-
-    mostrar_error(D, 'Por favor, ingresa un offset valido.').
+validar_offset(Ventana, Tipo, Modo, ValorNumerico, OffsetTexto) :-
+    parsear_numero(OffsetTexto, Offset), !,
+    validar_archivo(Ventana, Tipo, Modo, ValorNumerico, Offset).
+validar_offset(Ventana, _, _, _, _) :-
+    mostrar_error(Ventana, 'Por favor, ingresa un offset valido.').
 
-validar_archivo(D, Tipo, Modo, ValNum, Offset) :-
-    archivo_tabla(Tipo, Archivo), !,
-    ejecutar_modo(D, Archivo, Tipo, Modo, ValNum, Offset).
-validar_archivo(D, _, _, _, _) :-
-    mostrar_error(D, 'No se encontro la tabla para el tipo seleccionado.').
+validar_archivo(Ventana, Tipo, Modo, ValorNumerico, Offset) :-
+    archivo_tabla(Tipo, RutaTabla), !,
+    ejecutar_modo(Ventana, RutaTabla, Tipo, Modo, ValorNumerico, Offset).
+validar_archivo(Ventana, _, _, _, _) :-
+    mostrar_error(Ventana, 'No se encontro la tabla para el tipo seleccionado.').
 
-ejecutar_modo(D, Archivo, Tipo, 'mV a Grados', ValNum, Offset) :-
-    !, calcular_mv_c(D, Archivo, Tipo, ValNum, Offset).
-ejecutar_modo(D, Archivo, Tipo, _, ValNum, Offset) :-
-    calcular_c_mv(D, Archivo, Tipo, ValNum, Offset).
+ejecutar_modo(Ventana, RutaTabla, Tipo, 'mV a Grados', ValorNumerico, Offset) :-
+    !, calcular_mv_a_c(Ventana, RutaTabla, Tipo, ValorNumerico, Offset).
+ejecutar_modo(Ventana, RutaTabla, Tipo, _, ValorNumerico, Offset) :-
+    calcular_c_a_mv(Ventana, RutaTabla, Tipo, ValorNumerico, Offset).
 
-calcular_mv_c(D, Archivo, Tipo, ValNum, Offset) :-
-    buscar_mv_c(Archivo, ValNum, ResBase), !,
-    Res is round((ResBase + Offset) * 100) / 100,
-    atomic_list_concat(['Resultado: ', Res, ' C'], LblTxt),
-    atomic_list_concat(['[Tipo ', Tipo, '] ', ValNum, ' mV  =  ', Res, ' C (offset ', Offset, ')'], HistTxt),
-    mostrar_exito(D, LblTxt, HistTxt, 'Conversion correcta.:)').
-calcular_mv_c(D, _, _, _, _) :-
-    mostrar_error_rango(D).
+calcular_mv_a_c(Ventana, RutaTabla, Tipo, ValorNumerico, Offset) :-
+    buscar_mv_c(RutaTabla, ValorNumerico, ResultadoBase), !,
+    ResultadoFinal is round((ResultadoBase + Offset) * 100) / 100,
+    atomic_list_concat(['Resultado: ', ResultadoFinal, ' C'], TextoEtiqueta),
+    atomic_list_concat(['[Tipo ', Tipo, '] ', ValorNumerico, ' mV  =  ', ResultadoFinal, ' C (offset ', Offset, ')'], TextoHistorial),
+    mostrar_exito(Ventana, TextoEtiqueta, TextoHistorial, 'Conversion correcta.:)').
+calcular_mv_a_c(Ventana, _, _, _, _) :-
+    mostrar_error_rango(Ventana).
 
-calcular_c_mv(D, Archivo, Tipo, ValNum, Offset) :-
-    buscar_c_mv(Archivo, ValNum, ResBase), !,
-    Res is round((ResBase + Offset) * 1000) / 1000,
-    atomic_list_concat(['Resultado: ', Res, ' mV'], LblTxt),
-    atomic_list_concat(['[Tipo ', Tipo, '] ', ValNum, ' C  =  ', Res, ' mV (offset ', Offset, ')'], HistTxt),
-    mostrar_exito(D, LblTxt, HistTxt, 'Conversion correcta.').
-calcular_c_mv(D, _, _, _, _) :-
-    mostrar_error_rango(D).
+calcular_c_a_mv(Ventana, RutaTabla, Tipo, ValorNumerico, Offset) :-
+    buscar_c_mv(RutaTabla, ValorNumerico, ResultadoBase), !,
+    ResultadoFinal is round((ResultadoBase + Offset) * 1000) / 1000,
+    atomic_list_concat(['Resultado: ', ResultadoFinal, ' mV'], TextoEtiqueta),
+    atomic_list_concat(['[Tipo ', Tipo, '] ', ValorNumerico, ' C  =  ', ResultadoFinal, ' mV (offset ', Offset, ')'], TextoHistorial),
+    mostrar_exito(Ventana, TextoEtiqueta, TextoHistorial, 'Conversion correcta.').
+calcular_c_a_mv(Ventana, _, _, _, _) :-
+    mostrar_error_rango(Ventana).
 
-mostrar_error(D, Msg) :-
-    get(D, member, 'Resultado y Estado', GrpRes),
-    get(GrpRes, member, status, StatusLabel),
-    send(StatusLabel, selection, Msg),
-    send(StatusLabel, colour, colour(red)).
+mostrar_error(Ventana, Mensaje) :-
+    get(Ventana, member, 'Resultado y Estado', GrupoResultado),
+    get(GrupoResultado, member, status, EtiquetaEstado),
+    send(EtiquetaEstado, selection, Mensaje),
+    send(EtiquetaEstado, colour, colour(red)).
 
-mostrar_error_rango(D) :-
-    get(D, member, 'Resultado y Estado', GrpRes),
-    get(GrpRes, member, resultado, ResLabel),
-    send(ResLabel, selection, 'Error: Fuera de rango'),
-    send(ResLabel, colour, colour(darkgray)),
-    get(GrpRes, member, status, StatusLabel),
-    send(StatusLabel, selection, 'Error: fuera de rango'),
-    send(StatusLabel, colour, colour(red)),
-    get(D, member, 'Historial de Conversiones', GrpHist),
-    get(GrpHist, member, historial_lista, ListaHistorial),
-    send(ListaHistorial, append, dict_item('Error: Valor fuera de limites')).
+mostrar_error_rango(Ventana) :-
+    get(Ventana, member, 'Resultado y Estado', GrupoResultado),
+    get(GrupoResultado, member, resultado, EtiquetaResultado),
+    send(EtiquetaResultado, selection, 'Error: Fuera de rango'),
+    send(EtiquetaResultado, colour, colour(darkgray)),
+    get(GrupoResultado, member, status, EtiquetaEstado),
+    send(EtiquetaEstado, selection, 'Error: fuera de rango'),
+    send(EtiquetaEstado, colour, colour(red)),
+    get(Ventana, member, 'Historial de Conversiones', GrupoHistorial),
+    get(GrupoHistorial, member, historial_lista, CajaHistorial),
+    send(CajaHistorial, append, dict_item('Error: Valor fuera de limites')).
 
-mostrar_exito(D, LblTxt, HistTxt, EstadoMsg) :-
-    get(D, member, 'Resultado y Estado', GrpRes),
-    get(GrpRes, member, resultado, ResLabel),
-    send(ResLabel, selection, LblTxt),
-    send(ResLabel, colour, colour(blue)),
-    get(GrpRes, member, status, StatusLabel),
-    send(StatusLabel, selection, EstadoMsg),
-    send(StatusLabel, colour, colour(green)),
-    get(D, member, 'Historial de Conversiones', GrpHist),
-    get(GrpHist, member, historial_lista, ListaHistorial),
-    send(ListaHistorial, append, dict_item(HistTxt)).
+mostrar_exito(Ventana, TextoEtiqueta, TextoHistorial, MensajeEstado) :-
+    get(Ventana, member, 'Resultado y Estado', GrupoResultado),
+    get(GrupoResultado, member, resultado, EtiquetaResultado),
+    send(EtiquetaResultado, selection, TextoEtiqueta),
+    send(EtiquetaResultado, colour, colour(blue)),
+    get(GrupoResultado, member, status, EtiquetaEstado),
+    send(EtiquetaEstado, selection, MensajeEstado),
+    send(EtiquetaEstado, colour, colour(green)),
+    get(Ventana, member, 'Historial de Conversiones', GrupoHistorial),
+    get(GrupoHistorial, member, historial_lista, CajaHistorial),
+    send(CajaHistorial, append, dict_item(TextoHistorial)).
 
 parsear_numero(Texto, Numero) :-
-    texto_a_string(Texto, Texto0),
-    normalize_space(string(Texto1), Texto0),
-    texto_decimal_normalizado(Texto1, TextoNormalizado),
+    texto_a_string(Texto, TextoS),
+    normalize_space(string(TextoN), TextoS),
+    texto_decimal_normalizado(TextoN, TextoNormalizado),
     catch(number_string(Numero, TextoNormalizado), _, fail).
 
 texto_a_string(Texto, Salida) :-
@@ -134,74 +140,74 @@ texto_a_string(Texto, Salida) :-
 texto_a_string(Texto, Salida) :-
     atom(Texto), !, atom_string(Texto, Salida).
 texto_a_string(Texto, Salida) :-
-    catch(get(Texto, value, Val), _, fail), !, texto_a_string(Val, Salida).
+    catch(get(Texto, value, Valor), _, fail), !, texto_a_string(Valor, Salida).
 texto_a_string(Texto, Salida) :-
     format(string(Salida), '~w', [Texto]).
 
 texto_decimal_normalizado(TextoIn, TextoOut) :-
-    string_chars(TextoIn, CharsIn),
-    maplist(reemplazar_coma_por_punto, CharsIn, CharsOut),
-    string_chars(TextoOut, CharsOut).
+    string_chars(TextoIn, CaracteresIn),
+    maplist(reemplazar_coma_por_punto, CaracteresIn, CaracteresOut),
+    string_chars(TextoOut, CaracteresOut).
 
 reemplazar_coma_por_punto(',', '.') :- !.
 reemplazar_coma_por_punto(Char, Char).
 
-archivo_tabla(Tipo, Archivo) :-
-    atomic_list_concat(['tabla_', Tipo, '.txt'], Nombre),
-    buscar_archivo(Nombre, Archivo).
+archivo_tabla(Tipo, RutaTabla) :-
+    atomic_list_concat(['tabla_', Tipo, '.txt'], NombreArchivo),
+    buscar_archivo(NombreArchivo, RutaTabla).
 
-buscar_archivo(Nombre, Archivo) :-
-    current_prolog_flag(os_argv, [ExePath|_]),
-    file_directory_name(ExePath, DirExe),
-    directory_file_path(DirExe, Nombre, PathExe),
-    exists_file(PathExe), !,
-    Archivo = PathExe.
-buscar_archivo(Nombre, Archivo) :-
+buscar_archivo(NombreArchivo, RutaFinal) :-
+    current_prolog_flag(os_argv, [RutaExe|_]),
+    file_directory_name(RutaExe, DirectorioExe),
+    directory_file_path(DirectorioExe, NombreArchivo, RutaCompletaExe),
+    exists_file(RutaCompletaExe), !,
+    RutaFinal = RutaCompletaExe.
+buscar_archivo(NombreArchivo, RutaFinal) :-
     source_file(archivo_tabla(_, _), ArchivoFuente),
-    file_directory_name(ArchivoFuente, DirPl),
-    directory_file_path(DirPl, Nombre, PathPl),
-    exists_file(PathPl), !,
-    Archivo = PathPl.
-buscar_archivo(Nombre, Archivo) :-
-    exists_file(Nombre), !,
-    Archivo = Nombre.
+    file_directory_name(ArchivoFuente, DirectorioPl),
+    directory_file_path(DirectorioPl, NombreArchivo, RutaCompletaPl),
+    exists_file(RutaCompletaPl), !,
+    RutaFinal = RutaCompletaPl.
+buscar_archivo(NombreArchivo, RutaFinal) :-
+    exists_file(NombreArchivo), !,
+    RutaFinal = NombreArchivo.
 
-limpiar(D) :-
-    get(D, member, '2. Entrada de Datos', GrpDatos),
-    get(GrpDatos, member, valor, ValItem), send(ValItem, selection, ''),
-    get(GrpDatos, member, offset, OffsetItem), send(OffsetItem, selection, '0'),
-    get(D, member, 'Resultado y Estado', GrpRes),
-    get(GrpRes, member, resultado, ResLabel), send(ResLabel, selection, 'Resultado: --'),
-    get(GrpRes, member, status, StatusLabel), send(StatusLabel, selection, ''),
-    get(D, member, 'Historial de Conversiones', GrpHist),
-    get(GrpHist, member, historial_lista, ListaHistorial), send(ListaHistorial, clear).
+limpiar(Ventana) :-
+    get(Ventana, member, '2. Entrada de Datos', GrupoEntrada),
+    get(GrupoEntrada, member, valor, InputValor), send(InputValor, selection, ''),
+    get(GrupoEntrada, member, offset, InputOffset), send(InputOffset, selection, '0'),
+    get(Ventana, member, 'Resultado y Estado', GrupoResultado),
+    get(GrupoResultado, member, resultado, EtiquetaResultado), send(EtiquetaResultado, selection, 'Resultado: --'),
+    get(GrupoResultado, member, status, EtiquetaEstado), send(EtiquetaEstado, selection, ''),
+    get(Ventana, member, 'Historial de Conversiones', GrupoHistorial),
+    get(GrupoHistorial, member, historial_lista, CajaHistorial), send(CajaHistorial, clear).
 
-buscar_mv_c(Archivo, V, ResFinal) :-
-    csv_read_file(Archivo, Filas0, [separator(44), convert(true)]),
-    predsort(compare_mv, Filas0, Filas),
-    interpolar_mv(Filas, V, ResCalc),
-    ResFinal is round(ResCalc * 100) / 100.
+buscar_mv_c(RutaTabla, Voltaje, ResultadoFinal) :-
+    csv_read_file(RutaTabla, DatosBrutos, [separator(44), convert(true)]),
+    predsort(comparar_por_mv, DatosBrutos, DatosOrdenados),
+    interpolar_mv(DatosOrdenados, Voltaje, ValorCalculado),
+    ResultadoFinal is round(ValorCalculado * 100) / 100.
 
-interpolar_mv([row(MV1, T1), row(MV2, T2) | _], V, T) :-
-    ( (V >= MV1, V =< MV2) ; (V >= MV2, V =< MV1) ), !,
-    T is T1 + ((V - MV1) / (MV2 - MV1)) * (T2 - T1).
-interpolar_mv([_ | Resto], V, T) :- 
-    interpolar_mv(Resto, V, T).
+interpolar_mv([row(MV_A, Temp_A), row(MV_B, Temp_B) | _], Voltaje, Temperatura) :-
+    ( (Voltaje >= MV_A, Voltaje =< MV_B) ; (Voltaje >= MV_B, Voltaje =< MV_A) ), !,
+    Temperatura is Temp_A + ((Voltaje - MV_A) / (MV_B - MV_A)) * (Temp_B - Temp_A).
+interpolar_mv([_ | RestoDatos], Voltaje, Temperatura) :- 
+    interpolar_mv(RestoDatos, Voltaje, Temperatura).
 
-buscar_c_mv(Archivo, T_in, ResFinal) :-
-    csv_read_file(Archivo, Filas0, [separator(44), convert(true)]),
-    predsort(compare_t, Filas0, Filas),
-    interpolar_c(Filas, T_in, ResCalc),
-    ResFinal is round(ResCalc * 1000) / 1000.
+buscar_c_mv(RutaTabla, TempEntrada, ResultadoFinal) :-
+    csv_read_file(RutaTabla, DatosBrutos, [separator(44), convert(true)]),
+    predsort(comparar_por_temp, DatosBrutos, DatosOrdenados),
+    interpolar_c(DatosOrdenados, TempEntrada, ValorCalculado),
+    ResultadoFinal is round(ValorCalculado * 1000) / 1000.
 
-interpolar_c([row(MV1, T1), row(MV2, T2) | _], T_in, MV_out) :-
-    ( (T_in >= T1, T_in =< T2) ; (T_in >= T2, T_in =< T1) ), !,
-    MV_out is MV1 + ((T_in - T1) / (T2 - T1)) * (MV2 - MV1).
-interpolar_c([_ | Resto], T_in, MV_out) :- 
-    interpolar_c(Resto, T_in, MV_out).
+interpolar_c([row(MV_A, Temp_A), row(MV_B, Temp_B) | _], TempEntrada, MVSalida) :-
+    ( (TempEntrada >= Temp_A, TempEntrada =< Temp_B) ; (TempEntrada >= Temp_B, TempEntrada =< Temp_A) ), !,
+    MVSalida is MV_A + ((TempEntrada - Temp_A) / (Temp_B - Temp_A)) * (MV_B - MV_A).
+interpolar_c([_ | RestoDatos], TempEntrada, MVSalida) :- 
+    interpolar_c(RestoDatos, TempEntrada, MVSalida).
 
-compare_mv(Order, row(MV1,_), row(MV2,_)) :-
-    compare(Order, MV1, MV2).
+comparar_por_mv(Orden, row(MV_A,_), row(MV_B,_)) :-
+    compare(Orden, MV_A, MV_B).
 
-compare_t(Order, row(_,T1), row(_,T2)) :-
-    compare(Order, T1, T2).
+comparar_por_temp(Orden, row(_,Temp_A), row(_,Temp_B)) :-
+    compare(Orden, Temp_A, Temp_B).

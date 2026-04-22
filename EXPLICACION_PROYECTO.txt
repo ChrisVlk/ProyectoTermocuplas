@@ -1,0 +1,59 @@
+# GUÍA EXPLICATIVA: CONVERSOR DE TERMOCUPLAS (Proyecto.pl)
+
+Este documento detalla el funcionamiento interno del programa `Proyecto.pl`. El código está organizado de forma modular para que sea fácil de mantener y explicar. Se divide principalmente en cuatro grandes bloques funcionales.
+
+---
+
+## 1. BLOQUE DE INTERFAZ GRÁFICA (XPCE)
+Este bloque se encarga de "dibujar" la ventana y todos los elementos que el usuario ve.
+
+*   **`iniciar_app`**: Es el punto de entrada. Crea la ventana principal (`dialog`) y define su tamaño.
+*   **Contenedores (`dialog_group`)**: Para que la interfaz sea ordenada, los elementos se agrupan en cajas visuales:
+    *   **Configuración del Sensor**: Contiene los menús desplegables para elegir el tipo de termocupla (K, J, T) y el modo de conversión.
+    *   **Entrada de Datos**: Campos de texto para que el usuario escriba el valor a convertir y el offset.
+    *   **Resultado y Estado**: Etiquetas dinámicas que cambian de color para mostrar el número final y si hubo algún error.
+    *   **Historial**: Un navegador de lista (`list_browser`) que guarda un registro de todo lo que has calculado en la sesión.
+
+---
+
+## 2. BLOQUE DE CONTROL Y VALIDACIÓN
+Este bloque actúa como el "cerebro" que conecta los botones de la pantalla con los cálculos matemáticos.
+
+*   **`calcular(D)`**: Se activa al presionar el botón "CALCULAR". Su función es extraer los textos que el usuario escribió en la ventana y pasarlos a la siguiente etapa.
+*   **`validar_y_calcular`**: Asegura que lo que el usuario escribió sea realmente un número. Si escribes letras o dejas el campo vacío, aquí es donde se lanza el mensaje de error en rojo.
+*   **`parsear_numero`**: Una función de limpieza. Permite que el usuario use tanto el **punto (.)** como la **coma (,)** como separador decimal, normalizándolos para que Prolog pueda hacer matemáticas con ellos.
+*   **`buscar_archivo`**: Es vital para la portabilidad. Busca las tablas `.txt` tanto en la carpeta donde está instalado Prolog como en la carpeta donde tienes guardado el archivo `.pl`. Esto permite que el programa funcione aunque lo muevas de sitio.
+
+---
+
+## 3. BLOQUE DE LÓGICA DE NEGOCIO (Conversiones)
+Aquí se decide qué hacer dependiendo de lo que el usuario seleccionó.
+
+*   **`ejecutar_modo`**: Si elegiste "mV a Grados", llama a la lógica de milivoltios. Si elegiste "Grados a mV", llama a la lógica de temperatura.
+*   **`calcular_mv_c` / `calcular_c_mv`**: 
+    1. Llama al buscador para obtener el dato de la tabla.
+    2. Aplica el **Offset** (la corrección de calibración).
+    3. Redondea el resultado (2 decimales para grados, 3 para mV).
+    4. Envía el resultado final al historial y a la pantalla.
+
+---
+
+## 4. BLOQUE MATEMÁTICO (Interpolación Lineal)
+Este es el motor de cálculo real. Como las tablas no tienen todos los valores posibles (solo van de grado en grado o de mV en mV), necesitamos "adivinar" razonablemente el valor intermedio.
+
+*   **`csv_read_file`**: Lee los archivos `tabla_k.txt`, etc., y los carga en la memoria de Prolog rápidamente.
+*   **`predsort`**: Ordena los datos de la tabla. Esto es una medida de seguridad para que la interpolación sea siempre correcta incluso si la tabla está desordenada.
+*   **Lógica de Interpolación (`interpolar_mv` e `interpolar_c`)**:
+    *   Busca en la tabla los dos puntos más cercanos al valor que ingresaste (uno arriba y otro abajo).
+    *   Aplica la **Fórmula de Interpolación Lineal**:  
+        `Resultado = Y1 + ((X - X1) / (X2 - X1)) * (Y2 - Y1)`
+    *   Esto garantiza precisión profesional basada en estándares industriales de termocuplas.
+
+---
+
+## RESUMEN PARA EXPLICAR RÁPIDAMENTE:
+1.  **Entrada**: El usuario elige un sensor y escribe un valor.
+2.  **Validación**: Prolog revisa que sea un número válido y que el archivo de la tabla exista.
+3.  **Búsqueda**: Se leen los archivos `.txt` de referencia.
+4.  **Matemáticas**: Se realiza una interpolación lineal entre los dos puntos más cercanos en la tabla para dar el valor exacto.
+5.  **Salida**: Se muestra el resultado con su color correspondiente y se guarda en el historial de la derecha.
